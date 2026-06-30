@@ -16,6 +16,7 @@ export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [theme, setTheme] = useState(() => localStorage.getItem('fleetlog-theme') || 'light');
 
   // Monitor auth state changes
   useEffect(() => {
@@ -85,6 +86,12 @@ export default function App() {
     setSidebarOpen(false);
   };
 
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    localStorage.setItem('fleetlog-theme', next);
+  };
+
   const renderView = () => {
     switch (activeView) {
       case 'newtrip':
@@ -118,7 +125,7 @@ export default function App() {
   }
 
   return (
-    <div className={`shell active`}>
+    <div className={`shell active`} data-theme={theme}>
       {/* Mobile Hamburger menu */}
       <button className="hamburger" onClick={toggleSidebar}>☰</button>
       
@@ -170,6 +177,12 @@ export default function App() {
         )}
         
         <div className="sidebar-footer">
+          <div className="sidebar-theme-toggle">
+            <button className="theme-btn" onClick={toggleTheme} title="Toggle theme">
+              <span className="theme-btn-icon">{theme === 'light' ? '🌙' : '☀️'}</span>
+              <span className="theme-btn-label">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+            </button>
+          </div>
           Logged in as<br />
           <b>{currentUser.name} ({currentUser.role})</b><br />
           <button 
