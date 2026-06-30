@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 export default function Reports({ trips }) {
   const [fromDate, setFromDate] = useState('');
@@ -46,21 +46,51 @@ export default function Reports({ trips }) {
     try {
       const wb = XLSX.utils.book_new();
       const now = new Date().toLocaleString('en-PH');
-      const GREEN = '1F3F36', WHITE = 'FFFFFF', HEADER_BG = '2F5D50';
+      
+      const PRIMARY_BLUE = '0066CC';
+      const DARK_SLATE = '0F172A';
+      const LIGHT_BG = 'F8FAFB';
+      const BORDER_COLOR = 'E2E8F0';
+      const WHITE = 'FFFFFF';
 
-      // Style helper (ignored by free xlsx library but included for compatibility)
+      // Status Colors configuration matching the app's status style badges
+      const STATUS_STYLES = {
+        'Completed': { bg: 'D1FAE5', text: '065F46' },
+        'Ongoing': { bg: 'FEF3C7', text: '92400E' },
+        'Cancelled': { bg: 'FEE2E2', text: '991B1B' },
+        'Scheduled': { bg: 'E3F2FD', text: '1E3A8A' }
+      };
+
+      // Style helper to create formatted cell style configuration
       const sc = (props) => {
+        const fill = props.fill
+          ? { patternType: 'solid', ...props.fill }
+          : undefined;
         return {
-          font: { name: 'Calibri', ...props.font },
-          fill: props.fill,
-          alignment: props.alignment,
-          border: {
-            top: { style: 'thin', color: { rgb: 'B0A898' } },
-            bottom: { style: 'thin', color: { rgb: 'B0A898' } },
-            left: { style: 'thin', color: { rgb: 'B0A898' } },
-            right: { style: 'thin', color: { rgb: 'B0A898' } }
+          font: { name: 'Segoe UI', ...props.font },
+          fill: fill,
+          alignment: props.alignment || { vertical: 'center' },
+          border: props.border !== undefined ? props.border : {
+            top: { style: 'thin', color: { rgb: BORDER_COLOR } },
+            bottom: { style: 'thin', color: { rgb: BORDER_COLOR } },
+            left: { style: 'thin', color: { rgb: BORDER_COLOR } },
+            right: { style: 'thin', color: { rgb: BORDER_COLOR } }
           }
         };
+      };
+
+      // Helper to compute and set column widths based on maximum text length
+      const autoFitColumns = (ws, rows, header) => {
+        const colWidths = (header || []).map(h => String(h || '').length);
+        rows.forEach(row => {
+          row.forEach((cell, idx) => {
+            const valStr = cell === null || cell === undefined ? '' : String(cell);
+            if (valStr.length > (colWidths[idx] || 0)) {
+              colWidths[idx] = valStr.length;
+            }
+          });
+        });
+        ws['!cols'] = colWidths.map(w => ({ wch: Math.max(12, w + 3) }));
       };
 
       // ============ SUMMARY SHEET ============
@@ -96,53 +126,66 @@ export default function Reports({ trips }) {
       driverList.forEach(d => sr.push(['', '  ' + d]));
 
       const wsS = XLSX.utils.aoa_to_sheet(sr);
-      wsS['!cols'] = [{ wch: 30 }, { wch: 40 }];
+      wsS['!cols'] = [{ wch: 32 }, { wch: 42 }];
 
       const mergeAndStyle = (ws, r, label, style) => {
         const cA = XLSX.utils.encode_cell({ r, c: 0 });
         const cB = XLSX.utils.encode_cell({ r, c: 1 });
-        if (ws[cA]) ws[cA].s = style;
-        if (ws[cB]) ws[cB].s = style;
+        if (!ws[cA]) ws[cA] = { v: label || '', t: 's' };
+        if (!ws[cB]) ws[cB] = { v: '', t: 's' };
+        ws[cA].s = style;
+        ws[cB].s = style;
         ws['!merges'] = ws['!merges'] || [];
         ws['!merges'].push({ s: { r, c: 0 }, e: { r, c: 1 } });
       };
 
       // Apply style metadata to summary sheet cell definitions
-      mergeAndStyle(wsS, 0, 'FLEETLOG', sc({ font: { bold: true, color: { rgb: WHITE }, sz: 22 }, fill: { fgColor: { rgb: GREEN } }, alignment: { horizontal: 'center' } }));
-      mergeAndStyle(wsS, 2, 'Company Vehicle Travel Report', sc({ font: { bold: true, color: { rgb: GREEN }, sz: 14 }, alignment: { horizontal: 'center' } }));
+      mergeAndStyle(wsS, 0, 'FLEETLOG', sc({ font: { bold: true, color: { rgb: WHITE }, sz: 20 }, fill: { fgColor: { rgb: PRIMARY_BLUE } }, alignment: { horizontal: 'center' } }));
+      mergeAndStyle(wsS, 2, 'Company Vehicle Travel Report', sc({ font: { bold: true, color: { rgb: DARK_SLATE }, sz: 14 }, alignment: { horizontal: 'center' } }));
 
       [4, 5, 6].forEach(r => {
-        if (wsS[XLSX.utils.encode_cell({ r, c: 0 })]) wsS[XLSX.utils.encode_cell({ r, c: 0 })].s = sc({ font: { bold: true, sz: 11, color: { rgb: GREEN } } });
-        if (wsS[XLSX.utils.encode_cell({ r, c: 1 })]) wsS[XLSX.utils.encode_cell({ r, c: 1 })].s = sc({ font: { sz: 11 } });
+        const cA = XLSX.utils.encode_cell({ r, c: 0 });
+        const cB = XLSX.utils.encode_cell({ r, c: 1 });
+        if (wsS[cA]) wsS[cA].s = sc({ font: { bold: true, sz: 10.5, color: { rgb: PRIMARY_BLUE } }, border: { bottom: { style: 'thin', color: { rgb: BORDER_COLOR } } } });
+        if (wsS[cB]) wsS[cB].s = sc({ font: { sz: 10.5 }, border: { bottom: { style: 'thin', color: { rgb: BORDER_COLOR } } } });
       });
 
-      mergeAndStyle(wsS, 8, 'TRIP SUMMARY', sc({ font: { bold: true, color: { rgb: WHITE }, sz: 13 }, fill: { fgColor: { rgb: HEADER_BG} } }));
+      const summaryHeaderRow = 8;
+      mergeAndStyle(wsS, summaryHeaderRow, 'TRIP SUMMARY', sc({ font: { bold: true, color: { rgb: WHITE }, sz: 12 }, fill: { fgColor: { rgb: DARK_SLATE } } }));
 
       [10, 11, 12, 13, 14].forEach(r => {
-        if (wsS[XLSX.utils.encode_cell({ r, c: 0 })]) wsS[XLSX.utils.encode_cell({ r, c: 0 })].s = sc({ font: { bold: true, sz: 11, color: { rgb: GREEN } }, fill: { fgColor: { rgb: 'E8F0ED' } }, alignment: { vertical: 'center' } });
-        if (wsS[XLSX.utils.encode_cell({ r, c: 1 })]) wsS[XLSX.utils.encode_cell({ r, c: 1 })].s = sc({ font: { sz: 12 }, fill: { fgColor: { rgb: 'E8F0ED' } }, alignment: { vertical: 'center', horizontal: 'center' } });
+        const cA = XLSX.utils.encode_cell({ r, c: 0 });
+        const cB = XLSX.utils.encode_cell({ r, c: 1 });
+        if (wsS[cA]) wsS[cA].s = sc({ font: { bold: true, sz: 11, color: { rgb: DARK_SLATE } }, fill: { fgColor: { rgb: LIGHT_BG } }, alignment: { vertical: 'center' } });
+        if (wsS[cB]) wsS[cB].s = sc({ font: { sz: 11.5, bold: true }, fill: { fgColor: { rgb: LIGHT_BG } }, alignment: { vertical: 'center', horizontal: 'center' } });
       });
 
       // VEHICLES section styling
       const vehTitleRow = 16;
-      mergeAndStyle(wsS, vehTitleRow, 'VEHICLES USED', sc({ font: { bold: true, color: { rgb: WHITE }, sz: 13 }, fill: { fgColor: { rgb: HEADER_BG } } }));
+      mergeAndStyle(wsS, vehTitleRow, 'VEHICLES USED', sc({ font: { bold: true, color: { rgb: WHITE }, sz: 12 }, fill: { fgColor: { rgb: DARK_SLATE } } }));
       const vehCountRow = vehTitleRow + 2;
-      if (wsS[XLSX.utils.encode_cell({ r: vehCountRow, c: 0 })]) wsS[XLSX.utils.encode_cell({ r: vehCountRow, c: 0 })].s = sc({ font: { bold: true, sz: 11, color: { rgb: GREEN } }, fill: { fgColor: { rgb: 'E8F0ED' } }, alignment: { vertical: 'center' } });
-      if (wsS[XLSX.utils.encode_cell({ r: vehCountRow, c: 1 })]) wsS[XLSX.utils.encode_cell({ r: vehCountRow, c: 1 })].s = sc({ font: { sz: 12 }, fill: { fgColor: { rgb: 'E8F0ED' } }, alignment: { vertical: 'center', horizontal: 'center' } });
+      if (wsS[XLSX.utils.encode_cell({ r: vehCountRow, c: 0 })]) wsS[XLSX.utils.encode_cell({ r: vehCountRow, c: 0 })].s = sc({ font: { bold: true, sz: 11, color: { rgb: DARK_SLATE } }, fill: { fgColor: { rgb: LIGHT_BG } }, alignment: { vertical: 'center' } });
+      if (wsS[XLSX.utils.encode_cell({ r: vehCountRow, c: 1 })]) wsS[XLSX.utils.encode_cell({ r: vehCountRow, c: 1 })].s = sc({ font: { sz: 11.5, bold: true }, fill: { fgColor: { rgb: LIGHT_BG } }, alignment: { vertical: 'center', horizontal: 'center' } });
       vehicleList.forEach((v, i) => {
         const rr = vehCountRow + 1 + i;
-        if (wsS[XLSX.utils.encode_cell({ r: rr, c: 1 })]) wsS[XLSX.utils.encode_cell({ r: rr, c: 1 })].s = sc({ font: { sz: 11, color: { rgb: '1C2422' } }, alignment: { vertical: 'center' } });
+        const cB = XLSX.utils.encode_cell({ r: rr, c: 1 });
+        if (wsS[cB]) wsS[cB].s = sc({ font: { sz: 11, color: { rgb: '334155' } }, alignment: { vertical: 'center' } });
+        const cA = XLSX.utils.encode_cell({ r: rr, c: 0 });
+        if (wsS[cA]) wsS[cA].s = sc({ font: { sz: 11 } });
       });
 
       // DRIVERS section styling
       const drvTitleRow = vehCountRow + 1 + vehicleList.length;
-      mergeAndStyle(wsS, drvTitleRow, 'DRIVERS ASSIGNED', sc({ font: { bold: true, color: { rgb: WHITE }, sz: 13 }, fill: { fgColor: { rgb: HEADER_BG } } }));
+      mergeAndStyle(wsS, drvTitleRow, 'DRIVERS ASSIGNED', sc({ font: { bold: true, color: { rgb: WHITE }, sz: 12 }, fill: { fgColor: { rgb: DARK_SLATE } } }));
       const drvCountRow = drvTitleRow + 2;
-      if (wsS[XLSX.utils.encode_cell({ r: drvCountRow, c: 0 })]) wsS[XLSX.utils.encode_cell({ r: drvCountRow, c: 0 })].s = sc({ font: { bold: true, sz: 11, color: { rgb: GREEN } }, fill: { fgColor: { rgb: 'E8F0ED' } }, alignment: { vertical: 'center' } });
-      if (wsS[XLSX.utils.encode_cell({ r: drvCountRow, c: 1 })]) wsS[XLSX.utils.encode_cell({ r: drvCountRow, c: 1 })].s = sc({ font: { sz: 12 }, fill: { fgColor: { rgb: 'E8F0ED' } }, alignment: { vertical: 'center', horizontal: 'center' } });
+      if (wsS[XLSX.utils.encode_cell({ r: drvCountRow, c: 0 })]) wsS[XLSX.utils.encode_cell({ r: drvCountRow, c: 0 })].s = sc({ font: { bold: true, sz: 11, color: { rgb: DARK_SLATE } }, fill: { fgColor: { rgb: LIGHT_BG } }, alignment: { vertical: 'center' } });
+      if (wsS[XLSX.utils.encode_cell({ r: drvCountRow, c: 1 })]) wsS[XLSX.utils.encode_cell({ r: drvCountRow, c: 1 })].s = sc({ font: { sz: 11.5, bold: true }, fill: { fgColor: { rgb: LIGHT_BG } }, alignment: { vertical: 'center', horizontal: 'center' } });
       driverList.forEach((d, i) => {
         const rr = drvCountRow + 1 + i;
-        if (wsS[XLSX.utils.encode_cell({ r: rr, c: 1 })]) wsS[XLSX.utils.encode_cell({ r: rr, c: 1 })].s = sc({ font: { sz: 11, color: { rgb: '1C2422' } }, alignment: { vertical: 'center' } });
+        const cB = XLSX.utils.encode_cell({ r: rr, c: 1 });
+        if (wsS[cB]) wsS[cB].s = sc({ font: { sz: 11, color: { rgb: '334155' } }, alignment: { vertical: 'center' } });
+        const cA = XLSX.utils.encode_cell({ r: rr, c: 0 });
+        if (wsS[cA]) wsS[cA].s = sc({ font: { sz: 11 } });
       });
 
       XLSX.utils.book_append_sheet(wb, wsS, 'Summary');
@@ -162,21 +205,56 @@ export default function Reports({ trips }) {
       ]);
       
       const wsL = XLSX.utils.aoa_to_sheet([header, ...rows]);
-      wsL['!cols'] = [{ wch: 12 }, { wch: 8 }, { wch: 20 }, { wch: 24 }, { wch: 18 }, { wch: 24 }, { wch: 32 }, { wch: 16 }, { wch: 14 }];
-
       const hr = XLSX.utils.decode_range(wsL['!ref']);
+
+      // Styling headers
       for (let c = hr.s.c; c <= hr.e.c; c++) {
         const addr = XLSX.utils.encode_cell({ r: 0, c });
-        if (wsL[addr]) wsL[addr].s = sc({ font: { bold: true, sz: 11, color: { rgb: WHITE } }, fill: { fgColor: { rgb: HEADER_BG } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } });
-      }
-
-      for (let r = 1; r <= list.length; r++) {
-        for (let c = hr.s.c; c <= hr.e.c; c++) {
-          const addr = XLSX.utils.encode_cell({ r, c });
-          if (wsL[addr]) wsL[addr].s = sc({ font: { sz: 10.5 }, fill: { fgColor: { rgb: r % 2 === 0 ? 'F6F3EC' : WHITE } }, alignment: { vertical: 'center', wrapText: true } });
+        if (wsL[addr]) {
+          wsL[addr].s = sc({
+            font: { bold: true, sz: 11, color: { rgb: WHITE } },
+            fill: { fgColor: { rgb: DARK_SLATE } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+          });
         }
       }
 
+      // Styling data rows
+      for (let r = 1; r <= list.length; r++) {
+        const isEven = r % 2 === 0;
+        const rowBg = isEven ? LIGHT_BG : WHITE;
+        const statusVal = rows[r - 1][8]; // The last column is Status
+        const statusStyle = STATUS_STYLES[statusVal] || { bg: rowBg, text: '000000' };
+
+        for (let c = hr.s.c; c <= hr.e.c; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          if (!wsL[addr]) continue;
+
+          // Center-align Date (col 0), Time (col 1), Duration (col 7), Status (col 8)
+          const isCenter = [0, 1, 7, 8].includes(c);
+          const align = {
+            vertical: 'center',
+            horizontal: isCenter ? 'center' : 'left',
+            wrapText: true
+          };
+
+          if (c === 8) {
+            wsL[addr].s = sc({
+              font: { bold: true, sz: 10.5, color: { rgb: statusStyle.text } },
+              fill: { fgColor: { rgb: statusStyle.bg } },
+              alignment: align
+            });
+          } else {
+            wsL[addr].s = sc({
+              font: { sz: 10.5 },
+              fill: { fgColor: { rgb: rowBg } },
+              alignment: align
+            });
+          }
+        }
+      }
+
+      autoFitColumns(wsL, rows, header);
       wsL['!freeze'] = { xSplit: 0, ySplit: 1 };
       XLSX.utils.book_append_sheet(wb, wsL, 'Trip Log');
 
@@ -189,18 +267,24 @@ export default function Reports({ trips }) {
         vs.push([v, vt.length, drivers.join(', ')]);
       });
       const wsV = XLSX.utils.aoa_to_sheet(vs);
-      wsV['!cols'] = [{ wch: 30 }, { wch: 14 }, { wch: 40 }];
 
       for (let c = 0; c <= 2; c++) {
         const addr = XLSX.utils.encode_cell({ r: 0, c });
-        if (wsV[addr]) wsV[addr].s = sc({ font: { bold: true, sz: 11, color: { rgb: WHITE } }, fill: { fgColor: { rgb: HEADER_BG } }, alignment: { horizontal: 'center', vertical: 'center' } });
+        if (wsV[addr]) wsV[addr].s = sc({ font: { bold: true, sz: 11, color: { rgb: WHITE } }, fill: { fgColor: { rgb: DARK_SLATE } }, alignment: { horizontal: 'center', vertical: 'center' } });
       }
       for (let r = 1; r < vs.length; r++) {
         for (let c = 0; c <= 2; c++) {
           const addr = XLSX.utils.encode_cell({ r, c });
-          if (wsV[addr]) wsV[addr].s = sc({ font: { sz: 11 }, fill: { fgColor: { rgb: r % 2 === 0 ? 'F6F3EC' : WHITE } }, alignment: { vertical: 'center', horizontal: c === 0 ? 'left' : 'center' } });
+          if (wsV[addr]) {
+            wsV[addr].s = sc({
+              font: { sz: 11 },
+              fill: { fgColor: { rgb: r % 2 === 0 ? LIGHT_BG : WHITE } },
+              alignment: { vertical: 'center', horizontal: c === 1 ? 'center' : 'left' }
+            });
+          }
         }
       }
+      autoFitColumns(wsV, vs.slice(1), vs[0]);
       XLSX.utils.book_append_sheet(wb, wsV, 'Vehicle Stats');
 
       // ============ DRIVER STATS SHEET ============
@@ -212,18 +296,24 @@ export default function Reports({ trips }) {
         ds.push([d, dt.length, vehs.join(', ')]);
       });
       const wsD = XLSX.utils.aoa_to_sheet(ds);
-      wsD['!cols'] = [{ wch: 24 }, { wch: 14 }, { wch: 40 }];
 
       for (let c = 0; c <= 2; c++) {
         const addr = XLSX.utils.encode_cell({ r: 0, c });
-        if (wsD[addr]) wsD[addr].s = sc({ font: { bold: true, sz: 11, color: { rgb: WHITE } }, fill: { fgColor: { rgb: HEADER_BG } }, alignment: { horizontal: 'center', vertical: 'center' } });
+        if (wsD[addr]) wsD[addr].s = sc({ font: { bold: true, sz: 11, color: { rgb: WHITE } }, fill: { fgColor: { rgb: DARK_SLATE } }, alignment: { horizontal: 'center', vertical: 'center' } });
       }
       for (let r = 1; r < ds.length; r++) {
         for (let c = 0; c <= 2; c++) {
           const addr = XLSX.utils.encode_cell({ r, c });
-          if (wsD[addr]) wsD[addr].s = sc({ font: { sz: 11 }, fill: { fgColor: { rgb: r % 2 === 0 ? 'F6F3EC' : WHITE } }, alignment: { vertical: 'center', horizontal: c === 0 ? 'left' : 'center' } });
+          if (wsD[addr]) {
+            wsD[addr].s = sc({
+              font: { sz: 11 },
+              fill: { fgColor: { rgb: r % 2 === 0 ? LIGHT_BG : WHITE } },
+              alignment: { vertical: 'center', horizontal: c === 1 ? 'center' : 'left' }
+            });
+          }
         }
       }
+      autoFitColumns(wsD, ds.slice(1), ds[0]);
       XLSX.utils.book_append_sheet(wb, wsD, 'Driver Stats');
 
       // Excel downloading trigger
