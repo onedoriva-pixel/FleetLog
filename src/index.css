@@ -817,16 +817,16 @@ tr:hover td {
 
 /* ===== CALENDAR UX ENHANCEMENTS ===== */
 
-.cal-head-center {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .cal-month-label {
   margin: 0;
   font-family: var(--font-display);
   font-size: 17px;
+}
+
+.cal-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .cal-today-btn {
@@ -837,10 +837,10 @@ tr:hover td {
   color: #fff;
   border: none;
   border-radius: 2px;
-  padding: 4px 10px;
+  padding: 6px 10px;
   cursor: pointer;
   font-weight: 600;
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s;
 }
 
 .cal-today-btn:hover {
@@ -848,8 +848,8 @@ tr:hover td {
 }
 
 .cal-cell.is-today .dnum {
-  background: var(--route);
-  color: #fff;
+  background: #e8f0ed;
+  color: var(--ink);
   border-radius: 50%;
   width: 22px;
   height: 22px;

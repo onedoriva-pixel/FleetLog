@@ -163,11 +163,11 @@ export default function Calendar({ trips }) {
       {/* Calendar Header with Navigation */}
       <div className="cal-head">
         <button onClick={() => shiftMonth(-1)}>&larr; Prev</button>
-        <div className="cal-head-center">
-          <h3 className="cal-month-label">{monthLabel}</h3>
+        <h3 className="cal-month-label">{monthLabel}</h3>
+        <div className="cal-head-right">
           <button className="cal-today-btn" onClick={goToToday}>Today</button>
+          <button onClick={() => shiftMonth(1)}>Next &rarr;</button>
         </div>
-        <button onClick={() => shiftMonth(1)}>Next &rarr;</button>
       </div>
 
       {/* Calendar Grid */}
