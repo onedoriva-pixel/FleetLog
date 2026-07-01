@@ -11,7 +11,8 @@
 const CONFIG = {
   FIREBASE_PROJECT_ID: 'travelschedule-f31ae',
   COLLECTION: 'trips',
-  SHEET_NAMES: ['Summary', 'Trip Log', 'Vehicle Stats', 'Driver Stats'],
+  USERS_COLLECTION: 'users',
+  SHEET_NAMES: ['Summary', 'Trip Log', 'Vehicle Stats', 'Driver Stats', 'Users'],
 };
 
 // ===== AUTH =====
@@ -95,6 +96,44 @@ function fetchTrips_() {
   } while (nextPageToken);
 
   return allTrips;
+}
+
+function fetchUsers_() {
+  const token = getAccessToken_();
+  const base =
+    `https://firestore.googleapis.com/v1/projects/${CONFIG.FIREBASE_PROJECT_ID}` +
+    `/databases/(default)/documents/${CONFIG.USERS_COLLECTION}`;
+
+  let allUsers = [];
+  let nextPageToken = null;
+
+  do {
+    let url = base + '?pageSize=1000';
+    if (nextPageToken) url += '&pageToken=' + encodeURIComponent(nextPageToken);
+
+    const res = UrlFetchApp.fetch(url, {
+      headers: { Authorization: 'Bearer ' + token },
+      muteHttpExceptions: true,
+    });
+    const body = JSON.parse(res.getContentText());
+    if (body.error) throw new Error(`Firestore API error: ${body.error.message}`);
+
+    if (body.documents) {
+      const mapped = body.documents.map((doc) => {
+        const f = doc.fields || {};
+        const row = { id: doc.name.split('/').pop() };
+        for (const [k, v] of Object.entries(f)) {
+          const type = Object.keys(v)[0];
+          row[k] = v[type];
+        }
+        return row;
+      });
+      allUsers = allUsers.concat(mapped);
+    }
+    nextPageToken = body.nextPageToken || null;
+  } while (nextPageToken);
+
+  return allUsers;
 }
 
 // ===== HELPERS =====
@@ -353,6 +392,40 @@ function writeDriverStatsSheet_(ss, trips) {
   sh.setFrozenRows(1);
 }
 
+// ===== SHEET 5: USERS =====
+
+function writeUsersSheet_(ss, users) {
+  const sh = ss.getSheetByName('Users');
+  clearSheet_(sh);
+
+  const headers = ['UID', 'Name', 'Email', 'Role', 'Created At'];
+
+  const data = users.map((u) => [
+    u.id || '',
+    u.name || '',
+    u.email || '',
+    u.role || '',
+    u.createdAt || '',
+  ]);
+
+  if (data.length === 0) {
+    sh.getRange(1, 1).setValue('No user data');
+    return;
+  }
+
+  setHeader_(sh, headers);
+  sh.getRange(2, 1, data.length, headers.length).setValues(data);
+
+  data.forEach((_, i) => {
+    if (i % 2 === 1) {
+      sh.getRange(i + 2, 1, 1, headers.length).setBackground('#f3f3f3');
+    }
+  });
+
+  autoResizeColumns_(sh, headers.length);
+  sh.setFrozenRows(1);
+}
+
 // ===== MAIN ENTRY POINT =====
 
 function syncFromFirestore() {
@@ -363,6 +436,8 @@ function syncFromFirestore() {
 
   try {
     const trips = fetchTrips_();
+    const users = fetchUsers_();
+
     if (trips.length === 0) {
       ui.alert('No trips found in Firestore.');
       return;
@@ -372,13 +447,14 @@ function syncFromFirestore() {
     writeTripLogSheet_(ss, trips);
     writeVehicleStatsSheet_(ss, trips);
     writeDriverStatsSheet_(ss, trips);
+    writeUsersSheet_(ss, users);
 
     // Activate Summary sheet
     ss.getSheetByName('Summary').activate();
 
     ui.alert(
       `Sync Complete!`,
-      `Successfully synced ${trips.length} trips from Firestore.\n\n` +
+      `Successfully synced ${trips.length} trips and ${users.length} users from Firestore.\n\n` +
       `Sheets updated: ${CONFIG.SHEET_NAMES.join(', ')}`,
       ui.ButtonSet.OK
     );
