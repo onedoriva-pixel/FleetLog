@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FleetLog — Company Vehicle Scheduler</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+      background: #f4f6f9;
+      color: #1e293b;
+      line-height: 1.7;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+      padding: 3rem 3.5rem;
+    }
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      margin-bottom: .25rem;
+    }
+    h1 + p {
+      font-size: 1.1rem;
+      color: #64748b;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin: 2.5rem 0 1rem;
+      padding-bottom: .4rem;
+      border-bottom: 3px solid #1a73e8;
+      display: inline-block;
+    }
+    h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 1.5rem 0 .5rem;
+      color: #0f172a;
+    }
+    p, li {
+      color: #334155;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 2rem 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: .75rem 0 1.25rem;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: .7rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background: #1a73e8;
+      color: #fff;
+      font-weight: 600;
+      font-size: .875rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    td {
+      background: #fff;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    ul {
+      padding-left: 1.5rem;
+      margin: .5rem 0 1rem;
+    }
+    ul ul {
+      margin: .25rem 0;
+    }
+    li {
+      margin-bottom: .3rem;
+    }
+    strong {
+      color: #0f172a;
+    }
+    em {
+      color: #64748b;
+    }
+    blockquote, .note {
+      background: #f0f7ff;
+      border-left: 4px solid #1a73e8;
+      padding: .75rem 1rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1rem 0;
+      color: #1e293b;
+    }
+    @media (max-width: 640px) {
+      body { padding: 1rem; }
+      .container { padding: 1.5rem; }
+      h1 { font-size: 1.7rem; }
+      table { font-size: .85rem; }
+      th, td { padding: .5rem .6rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1>FleetLog — Company Vehicle Scheduler</h1>
+    <p><strong>Modern, real‑time fleet management for growing companies.</strong></p>
+
+    <p>FleetLog is a cloud‑based vehicle scheduling system that eliminates the chaos of pen‑and‑paper logs, scattered spreadsheets, and miscommunication. It gives your entire team a single source of truth for trip requests, approvals, vehicle assignment, and driver tracking — accessible from any device with a browser.</p>
+
+    <hr>
+
+    <h2>Why Your Company Needs FleetLog</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Pain Point</th>
+          <th>FleetLog Solution</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Double‑booked vehicles</td>
+          <td>Real‑time conflict detection prevents overlapping trips</td>
+        </tr>
+        <tr>
+          <td>Lost paper logs</td>
+          <td>All trips stored securely in the cloud via Firebase</td>
+        </tr>
+        <tr>
+          <td>No visibility on fleet usage</td>
+          <td>Dashboard with live stats, calendar view, and vehicle/driver reports</td>
+        </tr>
+        <tr>
+          <td>Manual Excel reports</td>
+          <td>One‑click Excel export with 4 professionally formatted sheets</td>
+        </tr>
+        <tr>
+          <td>No backup</td>
+          <td>Google Sheets sync for instant online backup</td>
+        </tr>
+        <tr>
+          <td>Slow approval workflows</td>
+          <td>Role‑based access — Admin manages, Staff requests</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Key Features &amp; Advantages</h2>
+
+    <h3>1. Real‑Time Dashboard</h3>
+    <ul>
+      <li><strong>At‑a‑glance stats</strong> — Total trips, active today, upcoming, vehicles in use</li>
+      <li><strong>Interactive calendar</strong> — Month view with color‑coded trips, filterable by vehicle, driver, and status</li>
+      <li><strong>Upcoming trips table</strong> — Next 6 trips, always visible</li>
+    </ul>
+
+    <h3>2. Intelligent Trip Scheduling</h3>
+    <ul>
+      <li><strong>Conflict detection</strong> — Warns instantly if a vehicle or driver is already booked</li>
+      <li><strong>Smart suggestions</strong> — Auto‑completes existing vehicle names, drivers, and locations</li>
+      <li><strong>Status lifecycle</strong> — Scheduled → Ongoing → Completed / Cancelled</li>
+    </ul>
+
+    <h3>3. Role‑Based Access Control</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Permissions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Admin</strong></td>
+          <td>Full control — create, edit, update status, delete trips; access setup &amp; configuration</td>
+        </tr>
+        <tr>
+          <td><strong>Staff</strong></td>
+          <td>Create trips, view all records, update trip status</td>
+        </tr>
+      </tbody>
+    </table>
+    <p><em>First user automatically becomes Admin. No complicated setup.</em></p>
+
+    <h3>4. Powerful Reporting &amp; Export</h3>
+    <ul>
+      <li><strong>Excel Export</strong> — 4 sheets with professional styling:
+        <ul>
+          <li>Summary (trip counts, vehicle &amp; driver stats)</li>
+          <li>Trip Log (all trips with color‑coded status)</li>
+          <li>Vehicle Stats (per‑vehicle trip counts &amp; drivers)</li>
+          <li>Driver Stats (per‑driver trip counts &amp; vehicles)</li>
+        </ul>
+      </li>
+      <li><strong>Google Sheets Sync</strong> — Automated online backup to your Google Sheet</li>
+    </ul>
+
+    <h3>5. Reliable Cloud Infrastructure</h3>
+    <ul>
+      <li><strong>Firebase backend</strong> — Google‑hosted, auto‑scaling, secure</li>
+      <li><strong>Email/password authentication</strong> — Built‑in, no third‑party dependencies</li>
+      <li><strong>Real‑time sync</strong> — Changes reflect instantly across all users</li>
+      <li><strong>Dark mode</strong> — Easy on the eyes, persists across sessions</li>
+    </ul>
+
+    <hr>
+
+    <h2>Who Is It For?</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Department</th>
+          <th>How They Benefit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Operations</strong></td>
+          <td>Schedule vehicles &amp; drivers without conflicts</td>
+        </tr>
+        <tr>
+          <td><strong>Admin / HR</strong></td>
+          <td>Track fleet usage, generate reports for audits</td>
+        </tr>
+        <tr>
+          <td><strong>Drivers</strong></td>
+          <td>See assigned trips, know their schedule</td>
+        </tr>
+        <tr>
+          <td><strong>Management</strong></td>
+          <td>Get visibility into fleet utilization</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Technical Highlights</h2>
+    <ul>
+      <li><strong>Frontend:</strong> React 19 + Vite 8 — fast, modern SPA</li>
+      <li><strong>Backend:</strong> Firebase Firestore (NoSQL) + Firebase Auth</li>
+      <li><strong>Export:</strong> XLSX with full styling (xlsx-js-style)</li>
+      <li><strong>Deployment:</strong> Ready for Vercel / Firebase Hosting</li>
+      <li><strong>Cross‑platform:</strong> Works on desktop, tablet, and mobile browsers</li>
+    </ul>
+
+    <hr>
+
+    <h2>Getting Started</h2>
+    <ol>
+      <li>Deploy the app (Vercel, Firebase Hosting, or any static host)</li>
+      <li>Register the first account — automatically becomes <strong>Admin</strong></li>
+      <li>Start adding trips — the team can see them immediately</li>
+      <li>Generate reports or sync to Google Sheets for backup</li>
+    </ol>
+
+    <hr>
+
+    <p><em>FleetLog — simplifying fleet management, one trip at a time.</em></p>
+
+  </div>
+</body>
+</html>

@@ -127,6 +127,7 @@ function ensureSheets_(ss) {
 }
 
 function clearSheet_(sh) {
+  sh.setFrozenRows(0);
   const maxRows = sh.getMaxRows();
   const maxCols = sh.getMaxColumns();
   if (maxRows > 1) sh.deleteRows(2, maxRows - 1);
@@ -140,9 +141,6 @@ function setHeader_(sh, headers) {
     .setBackground('#1a73e8')
     .setFontColor('#ffffff')
     .setHorizontalAlignment('center');
-  if (sh.getMaxRows() > 1) {
-    sh.setFrozenRows(1);
-  }
 }
 
 function autoResizeColumns_(sh, numCols) {
@@ -216,6 +214,7 @@ function writeSummarySheet_(ss, trips) {
 
   sh.autoResizeColumn(1);
   sh.autoResizeColumn(2);
+  sh.setFrozenRows(0);
 }
 
 // ===== SHEET 2: TRIP LOG =====
@@ -268,6 +267,7 @@ function writeTripLogSheet_(ss, trips) {
   statusRange.setBackgrounds(statusBg);
 
   autoResizeColumns_(sh, headers.length);
+  sh.setFrozenRows(1);
 }
 
 // ===== SHEET 3: VEHICLE STATS =====
@@ -309,6 +309,7 @@ function writeVehicleStatsSheet_(ss, trips) {
   });
 
   autoResizeColumns_(sh, headers.length);
+  sh.setFrozenRows(1);
 }
 
 // ===== SHEET 4: DRIVER STATS =====
@@ -349,6 +350,7 @@ function writeDriverStatsSheet_(ss, trips) {
   });
 
   autoResizeColumns_(sh, headers.length);
+  sh.setFrozenRows(1);
 }
 
 // ===== MAIN ENTRY POINT =====

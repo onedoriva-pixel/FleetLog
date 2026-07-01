@@ -4,8 +4,12 @@ import { db } from '../firebase';
 
 export default function Records({ trips, currentUser }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingTrip, setEditingTrip] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   const isAdmin = currentUser?.role === 'Admin';
+
+  const canEdit = (t) => isAdmin || t.by === currentUser?.email;
 
   const getTripStatus = (t) => {
     if (t.status) return t.status;
@@ -14,6 +18,17 @@ export default function Records({ trips, currentUser }) {
     if (t.date === todayStr) return 'ongoing';
     return 'scheduled';
   };
+
+  // Extract unique vehicles and drivers for autocomplete in edit modal
+  const uniqueVehicles = useMemo(() => {
+    const vSet = new Set(trips.map(t => t.vehicle).filter(Boolean));
+    return [...vSet].sort();
+  }, [trips]);
+
+  const uniqueDrivers = useMemo(() => {
+    const dSet = new Set(trips.map(t => t.driver).filter(Boolean));
+    return [...dSet].sort();
+  }, [trips]);
 
   // Filter and sort trips (newest first based on date+time)
   const filteredTrips = useMemo(() => {
@@ -63,6 +78,55 @@ export default function Records({ trips, currentUser }) {
       showToast('Trip record deleted');
     } catch (err) {
       showToast('Error deleting record: ' + err.message, 'error');
+    }
+  };
+
+  const openEdit = (t) => {
+    setEditingTrip(t);
+    setEditForm({
+      date: t.date || '',
+      time: t.time || '',
+      requestedby: t.requestedby || '',
+      vehicle: t.vehicle || '',
+      driver: t.driver || '',
+      location: t.location || '',
+      purpose: t.purpose || '',
+      duration: t.duration || ''
+    });
+  };
+
+  const closeEdit = () => {
+    setEditingTrip(null);
+    setEditForm({});
+  };
+
+  const handleEditField = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditSave = async () => {
+    if (!editingTrip) return;
+    const { date, time, requestedby, vehicle, driver, location, purpose, duration } = editForm;
+    if (!date || !vehicle || !driver || !location) {
+      showToast('Missing fields — Date, Vehicle, Driver, and Location are required.', 'error');
+      return;
+    }
+    try {
+      const tripRef = doc(db, 'trips', editingTrip.id);
+      await updateDoc(tripRef, {
+        date,
+        time: time || '',
+        requestedby: requestedby.trim(),
+        vehicle: vehicle.trim(),
+        driver: driver.trim(),
+        location: location.trim(),
+        purpose: purpose.trim(),
+        duration: duration.trim()
+      });
+      showToast('Trip record updated successfully');
+      closeEdit();
+    } catch (err) {
+      showToast('Error updating record: ' + err.message, 'error');
     }
   };
 
@@ -140,11 +204,17 @@ export default function Records({ trips, currentUser }) {
                         </select>
                       </td>
                       <td className="row-actions">
-                        {isAdmin ? (
+                        {canEdit(t) && (
+                          <button onClick={() => openEdit(t)}>
+                            Edit
+                          </button>
+                        )}
+                        {isAdmin && (
                           <button className="del" onClick={() => handleDelete(t.id)}>
                             Delete
                           </button>
-                        ) : (
+                        )}
+                        {!canEdit(t) && (
                           <span style={{ fontSize: '11px', color: 'var(--muted)' }}>None</span>
                         )}
                       </td>
@@ -160,6 +230,68 @@ export default function Records({ trips, currentUser }) {
       {toast && (
         <div className={`toast toast-${toast.type}`}>
           {toast.msg}
+        </div>
+      )}
+
+      {/* EDIT TRIP MODAL */}
+      {editingTrip && (
+        <div className="modal-overlay active" onClick={closeEdit}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>Edit Trip Record</h3>
+              <button onClick={closeEdit}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-grid">
+                <div>
+                  <label>Date</label>
+                  <input type="date" value={editForm.date} onChange={(e) => handleEditField('date', e.target.value)} />
+                </div>
+                <div>
+                  <label>Time</label>
+                  <input type="time" value={editForm.time} onChange={(e) => handleEditField('time', e.target.value)} />
+                </div>
+                <div>
+                  <label>Requested By</label>
+                  <input type="text" value={editForm.requestedby} onChange={(e) => handleEditField('requestedby', e.target.value)} placeholder="Full name" />
+                </div>
+                <div>
+                  <label>Vehicle / Van</label>
+                  <input type="text" value={editForm.vehicle} onChange={(e) => handleEditField('vehicle', e.target.value)} placeholder="e.g. Van 1 — Toyota HiAce" list="edit-vehicles" />
+                  <datalist id="edit-vehicles">
+                    {uniqueVehicles.map(v => <option key={v} value={v} />)}
+                  </datalist>
+                </div>
+                <div>
+                  <label>Assigned Driver</label>
+                  <input type="text" value={editForm.driver} onChange={(e) => handleEditField('driver', e.target.value)} placeholder="e.g. Mark Santos" list="edit-drivers" />
+                  <datalist id="edit-drivers">
+                    {uniqueDrivers.map(d => <option key={d} value={d} />)}
+                  </datalist>
+                </div>
+                <div>
+                  <label>Travel Duration</label>
+                  <input type="text" value={editForm.duration} onChange={(e) => handleEditField('duration', e.target.value)} placeholder="e.g. 3 hours / 1 day" />
+                </div>
+                <div className="full">
+                  <label>Travel Location</label>
+                  <input type="text" value={editForm.location} onChange={(e) => handleEditField('location', e.target.value)} placeholder="Destination / route" />
+                </div>
+                <div className="full">
+                  <label>Purpose of Travel</label>
+                  <textarea value={editForm.purpose} onChange={(e) => handleEditField('purpose', e.target.value)} placeholder="Brief description of the trip purpose"></textarea>
+                </div>
+              </div>
+              <div className="form-actions">
+                <button className="btn" style={{ width: 'auto' }} onClick={handleEditSave}>
+                  Save Changes
+                </button>
+                <button className="btn btn-ghost" style={{ width: 'auto' }} onClick={closeEdit}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
